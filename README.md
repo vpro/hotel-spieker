@@ -1,2 +1,5 @@
 # hotel-spieker
-Enige for Google Home game Hotel Spieker
+Engine for Google Home game Hotel Spieker
+
+
+Todo:
