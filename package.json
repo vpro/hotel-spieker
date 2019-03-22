@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./express.js",
+    "start": "node ./server/app.js",
     "upload:test": "rsync --recursive --exclude '.svn*'  --exclude '.idea*' --compress --checksum --verbose . root@vs-appl-02:/data/hotelspieker"
   },
   "dependencies": {

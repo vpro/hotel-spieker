@@ -357,7 +357,7 @@ let generateAudioResponse = ( input ) => {
 };
 
 expressApp.post( '/app', app );
-expressApp.use( '/public' , express.static(__dirname + '/public/') );
-
+expressApp.use( '/public' , express.static(__dirname + '/../public/') );
+console.log( __dirname );
 expressApp.listen( port );
 console.log('listening on ' +  ip + ':'  + port);
