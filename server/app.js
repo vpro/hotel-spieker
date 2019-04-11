@@ -24,46 +24,25 @@ const testing =true;
 /// - set contexts to start lsitening to rooms // backup first!!!!!
 /// - credits
 
-
-///// START TESTS ////////
-
-// app.intent( 'prompt-ready-for-room', ( conv ) => {
-//     conv.ask(new SimpleResponse({
-//         speech: 'Wil je al een kamer beluisteren?',
-//         text: 'Wil je al een kamer beluisteren?'
-//         })
-//     );
-// } );
-//
-// // HOW TO SEND A EVENT INTENT (INTENT TRIGGERED BY CODE INSTEAD OF SPEECH)
-// app.intent( 'testevent', ( conv ) => {
-//     conv.ask(
-//         new SimpleResponse({
-//             speech: 'Okhier komt ie',
-//             text: 'Okhier komt ie'
-//         })
-//     );
-//     conv.followup('actions_intent_READYFORROOM');
-// } );
-
-
-///// END TESTS ////////
-
-
-
 ///// START INTENTS ////////
 
+
+
+app.middleware(conv => {
+    // will run before running the intent handler
+    console.log( conv.intent  );
+    // console.log( conv.contexts  );
+});
+
+
 app.intent( 'intro', ( conv ) => {
-    console.log('playing intro');
     conv.user.storage = {};
-    console.log( conv.user.storage );
     // let response = { end : false, audioMessages : [ getMessage( 'intro' ), getMessage( 'have_notes' ) ] };
     let response = { end : false, audioMessages : [  getMessage( 'have_notes' ) ] };
     sendResponse( conv, response );
 } );
 
 app.intent( 'have_notes_yes', ( conv ) => {
-    console.log('have_notes_yes');
     // let response = { end : false, audioMessages : [ getMessage( 'have_notes_yes' ), getMessage( 'have_notes_yes_continued' ) ] };
     let response = { end : false, audioMessages : [ getMessage( 'have_notes_yes' ) ] };
     sendResponse( conv, response );
@@ -74,14 +53,12 @@ app.intent( 'have_notes_yes', ( conv ) => {
 } );
 
 app.intent( 'have_notes_no', ( conv ) => {
-    console.log( 'have_notes_no');
     let response = { end : false, audioMessages : [ getMessage( 'have_notes_no' ), getMessage( 'have_notes' ) ] };
     sendResponse( conv, response );
 } );
 
 
 app.intent( 'follow_henk_yes', ( conv ) => {
-    console.log('follow_henk_yes');
     // let response = { end : false, audioMessages : [ getMessage( 'give_help_yes' ), getMessage( 'waiting_sound' ) , getMessage( 'which_room' ) ] };
     let response = { end : false, audioMessages : [ getMessage( 'help_yes_insufficient_no' ) ] };
     sendResponse( conv, response );
@@ -116,6 +93,7 @@ app.intent( 'getRoom', conv => {
 } );
 
 app.intent( 'get_room_yes', conv => {
+    conv.contexts.delete('innocentCharacters');
     conv.followup( 'actions_intent_AREYOUSURE' );
 } );
 
@@ -123,11 +101,11 @@ app.intent( 'get_room_no', conv => {
 
     // mag nog een kamer luisteren?
     if ( getAmountRoomsListened( conv ) === MAXROOMS ) {
-
+        // Trigger L + C
     } else {
-        // end_room_question
+        //Trigger D (ready for room?)
     }
-        // ja - ben je klaar om nog een akmer te luisteren
+        // ja - ben je klaar om nog een kamer te luisteren
             // Ja welke kamer
             // nee ....... TODO mega ingewikkeld
         // nee - Je moet een keuze maken -> terug naar C
@@ -158,7 +136,6 @@ app.intent( 'continue_yes_accusing' , conv => {
 } );
 
 app.intent( 'continue_yes_notaccusing', conv => {
-    let response = playRoom( conv, false );
     conv.followup( 'actions_intent_READYFORROOM' );
 } );
 
@@ -166,12 +143,11 @@ app.intent( 'continue_yes_notaccusing', conv => {
 app.intent( 'are_you_sure', conv => {
     let response = { end : false, audioMessages : [ getMessage( 'are_you_sure' ) ] };
     sendResponse( conv, response );
+    conv.contexts.delete('continue_yes-followup');
+
 } );
 
 app.intent( 'are_you_sure_yes', conv => {
-    conv.contexts.delete('are_you_sure-followup');
-    conv.contexts.delete('ask_for_accusation');
-
     let response = { end : false, audioMessages : [ getMessage( 'are_you_sure_yes' ) ] };
     sendResponse( conv, response );
 } );
@@ -179,24 +155,27 @@ app.intent( 'are_you_sure_yes', conv => {
 app.intent( 'are_you_sure_no', conv => {
     let response = { end : false, audioMessages : [ getMessage( 'are_you_sure_no' ) ] };
     sendResponse( conv, response );
-    conv.contexts.delete('are_you_sure-followup');
-    conv.contexts.delete('ask_for_accusation');
-
 } );
 
-app.intent( 'answer_correct', conv => {
-    let response = { end : true, audioMessages : [ getMessage( 'accuse_correct' ) ] };
-    sendResponse( conv, response );
-} );
-
-app.intent( 'accuse_wrong', conv => {
-    let response = { end : true, audioMessages :  MESSAGES[ 'accuse_wrong' ]  };
+app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
+    let answer = conv.parameters[ 'name' ] ? conv.parameters[ 'name' ].toLowerCase() : '';
+    console.log( 'answer given: ', answer );
+    let response = {};
+    if ( answer === 'emma' ) {
+        response = { end : true, audioMessages : [ getMessage( 'accuse_correct' ) ] };
+    } else if ( answer in innocentCharacters ){
+        // TODO: Add specific wrong answer audio, demo audio is missing
+        response = { end : true, audioMessages : [ getMessage( 'accuse_wrong' ) ] };
+    } else {
+        response = { end : true, audioMessages : [ getMessage( 'accuse__name_fallback' ) ] };
+        console.log( 'error' );
+    }
     sendResponse( conv, response );
 } );
 
 
 app.intent( 'accuse_fallback', conv => {
-    let response = { end : true, audioMessages :  MESSAGES[ 'accuse_wrong' ]  };
+    let response = { end : true, audioMessages :  getMessage( 'stop' )  };
     sendResponse( conv, response );
 } );
 
@@ -216,7 +195,6 @@ app.intent( 'say_bye', ( conv ) => {
 } );
 
 app.intent( 'Default Welcome Intent', conv => {
-    console.log('welcome');
     console.log( conv.user.storage );
     if ( !conv.user.storage || ( Object.keys(conv.user.storage).length === 0 && conv.user.storage.constructor === Object ) ) {
         console.log( 'trigger actions_intent_STARTGAME' );
@@ -366,24 +344,24 @@ let MESSAGES = {
     'fallback' : [] //MISSING
 };
 
-let characters  =  {
-    anna: ['E-03'],
-    joan: ['E-04'],
-    silvia: ['E-05'],
-    esmee: ['E-06'],
-    marian: ['E-07'],
-    guido: ['E-08'],
-    zelda: ['E-09'],
-    gerard: ['E-10'],
-    jannet: ['E-11'],
-    puk: ['E-12'],
-    bob: ['E-13'],
-    henk: ['E-14'],
-    pien: ['E-15'],
-    evert: ['E-16'],
-    steve: ['E-17'],
-    evaline: ['E-17'],
-    thierry: ['E-18']
+let innocentCharacters  =  {
+    'anna': ['E-03'],
+    'joan': ['E-04'],
+    'silvia': ['E-05'],
+    'esmee': ['E-06'],
+    'marian': ['E-07'],
+    'guido': ['E-08'],
+    'zelda': ['E-09'],
+    'gerard': ['E-10'],
+    'jannet': ['E-11'],
+    'puk': ['E-12'],
+    'bob': ['E-13'],
+    'henk': ['E-14'],
+    'pien': ['E-15'],
+    'evert': ['E-16'],
+    'steve': ['E-17'],
+    'evaline': ['E-17'],
+    'thierry': ['E-18']
 };
 
 

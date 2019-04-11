@@ -2,7 +2,7 @@
 
 Engine for Google Home game Hotel Spieker
 
-This code is the webhook for the 'Hotel-Spieker' agent created in https://console.dialogflow.com (using VPRO digitaal account)
+This code is the webhook for the 'Hotel-Spieker' agent created in https://console.dialogflow.com (using VPRO digitaal account, works best in chrome)
 
 The flow of the agent + webhook corrsponds with the scenario as defined in:
 https://docs.google.com/document/d/1D46ujIePTsNuZVTFygzjZLFUIEaobNxsUcoks41mAOw/edit?ts=5c98e215#
@@ -30,5 +30,20 @@ When using 'test in Google assistant':
 When deploying to binnenkort-op.vpro.nl:
 - make sure to set the fullfilment URL to https://binnenkort-op.vpro.nl/hotel-spieker/app
 
+------------
+
+Status:
+
+Done:
+- Intro flow
+- Returning visitor flow
+- Game logic (listening rooms, keeping tracks of rooms listened and how may rooms are left to listen)
+- Answer flow for correct answer
+
+Todo:
+- Roomlisten flow ( see https://docs.google.com/document/d/1IGKbORkLrWJ7zimeghas7CYjfIx8ZJIH4WewbNV-BkI/edit?ts=5c9b3b3b )
+- Answer flow for incorrect answer, play a different endig for each wrong anwser
+
+------------
 Notes:
 - audio moet mp3 zijn, mag kleiner, moet geladen worden voordat afgepseeld wordt
