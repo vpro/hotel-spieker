@@ -6,6 +6,7 @@ This code is the webhook for the 'Hotel-Spieker' agent created in https://consol
 
 The flow of the agent + webhook corresponds with the scenario as defined in:
 https://docs.google.com/document/d/1D46ujIePTsNuZVTFygzjZLFUIEaobNxsUcoks41mAOw/edit?ts=5c98e215#
+( intent names are noted in this document  in as much places much as possible)
 
 The main game flow is also described in this flowchart in the root of this project.
 
