@@ -4,8 +4,11 @@ Engine for Google Home game Hotel Spieker
 
 This code is the webhook for the 'Hotel-Spieker' agent created in https://console.dialogflow.com (using VPRO digitaal account, works best in chrome)
 
-The flow of the agent + webhook corrsponds with the scenario as defined in:
+The flow of the agent + webhook corresponds with the scenario as defined in:
 https://docs.google.com/document/d/1D46ujIePTsNuZVTFygzjZLFUIEaobNxsUcoks41mAOw/edit?ts=5c98e215#
+
+The main game flow is also described in this flowchart in the root of this project.
+
 
 For now, placeholder audio is used
 
