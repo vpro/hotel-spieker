@@ -48,7 +48,6 @@ Done:
 
 Todo / unfinished:
 - Roomlisten flow (see https://docs.google.com/document/d/1IGKbORkLrWJ7zimeghas7CYjfIx8ZJIH4WewbNV-BkI/edit?ts=5c9b3b3b )
-- when the user responds 'no' to 'heb je iets om notities mee te maken'
 - help
 
 
