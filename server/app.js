@@ -16,6 +16,9 @@ var port = process.env.PORT || 8080;
 
 const audioRoot = ( process.env.URL || 'https://hotelspieker.binnenkort-op.vpro.nl' ) + '/public/testaudio-v2/';
 const audioFormat = 'mp3';
+const MAXROOMS = 8;
+let lastRoomPlayed = undefined;
+
 
 // TODO:
 // - check NO's in intro
@@ -27,7 +30,6 @@ const audioFormat = 'mp3';
 app.middleware( conv => {
     // will run before running the intent handler
     console.log( conv.intent, conv.contexts );
-    // console.log( conv.contexts  );
 } );
 
 ///// START INTENTS ////////
@@ -51,10 +53,15 @@ app.intent( 'have_notes_yes', ( conv ) => {
 } );
 
 app.intent( 'have_notes_no', ( conv ) => {
+    // let response = { end: false, audioMessages: [ getMessage( 'have_notes_no' ), getMessage( 'have_notes' ) ] };
+    // sendResponse( conv, response );
+    conv.followup( 'actions_intent_NO_NOTES' );
+} );
+
+app.intent( 'user_has_no_notes', ( conv ) => {
     let response = { end: false, audioMessages: [ getMessage( 'have_notes_no' ), getMessage( 'have_notes' ) ] };
     sendResponse( conv, response );
 } );
-
 
 app.intent( 'follow_henk_yes', ( conv ) => {
     let response = {
@@ -107,17 +114,85 @@ app.intent( 'get_room_no', conv => {
     if ( getAmountRoomsListened( conv ) === MAXROOMS ) {
         // teveel geluisterd
         response.audioMessages = [ ( MESSAGES[ 'max_rooms_reached' ] ), getMessage( 'end_room_question' ) ];
+        sendResponse( conv, response );
+
+        //TODO
     } else {
-        // ben je klaar om nog een kamer te luisteren?
-        // ja
-        response.audioMessages = [ getMessage( 'which_room' ) ];
-        // nee
-        // Je moet een keuze maken -> terug naar C
+        conv.followup( 'actions_intent_READYFORANOTHER' );
     }
 
+} );
+
+app.intent( 'ready_for_another_room', conv => {
+    let response = {
+        end: false,
+        audioMessages: []
+    };
+    conv.contexts.delete( 'ask_for_accusation' );
+
+    response.audioMessages = [ getMessage( 'another_room' ) ];
     sendResponse( conv, response );
 
 } );
+
+app.intent( 'ready_for_another_room_yes', conv => {
+    conv.contexts.delete( 'ready_for_another_room_followup' );
+    conv.followup( 'actions_intent_READYFORROOM' );
+} );
+
+app.intent( 'ready_for_another_room_no', conv => {
+    conv.contexts.delete( 'ready_for_another_room_followup' );
+    conv.followup( 'actions_intent_WAITING' );
+} );
+
+
+app.intent( 'waiting', conv => {
+    let response = {
+        end: false,
+        audioMessages: []
+    };
+    conv.contexts.delete( 'ready_for_another_room-followup' );
+    conv.contexts.delete( 'ask_for_accusation' );
+
+    response.audioMessages = [ getMessage( 'waiting_sound' ) ];
+    sendResponse( conv, response );
+} );
+
+app.intent( 'waiting_no', conv => {
+    conv.contexts.delete( 'waiting_followup' );
+    conv.contexts.delete( 'ready_for_another_room-followup' );
+    conv.followup( 'actions_intent_WAITING_AGAIN' );
+} );
+
+app.intent( 'waiting_yes', conv => {
+    conv.contexts.delete( 'waiting_followup' );
+    conv.contexts.delete( 'ready_for_another_room-followup' );
+
+    conv.followup( 'actions_intent_READYFORROOM' );
+} );
+
+
+app.intent( 'waiting_again', conv => {
+    let response = {
+        end: false,
+        audioMessages: []
+    };
+    conv.contexts.delete( 'waiting_followup' );
+
+    response.audioMessages = [  getMessage( 'waiting_sound_continue' ) ];
+    sendResponse( conv, response );
+} );
+
+app.intent( 'waiting_again_no', conv => {
+    conv.contexts.delete( 'waiting_again_followup' );
+    conv.followup( 'actions_intent_WAITING_AGAIN' );
+} );
+
+app.intent( 'waiting_again_yes', conv => {
+    conv.contexts.delete( 'waiting_again_followup' );
+    conv.followup( 'actions_intent_READYFORROOM' );
+} );
+
 
 // start welcome back
 app.intent( 'welcome_back', conv => {
@@ -147,7 +222,21 @@ app.intent( 'continue_yes_accusing', conv => {
 } );
 
 app.intent( 'continue_yes_notaccusing', conv => {
-    conv.followup( 'actions_intent_READYFORROOM' );
+    // conv.followup( 'actions_intent_READYFORROOM' );
+    let response = {
+        end: false,
+        audioMessages: []
+    };
+
+    if ( getAmountRoomsListened( conv ) === MAXROOMS ) {
+        // teveel geluisterd
+        response.audioMessages = [ ( MESSAGES[ 'max_rooms_reached' ] ), getMessage( 'end_room_question' ) ];
+        sendResponse( conv, response );
+
+        //TODO
+    } else {
+        conv.followup( 'actions_intent_READYFORANOTHER' );
+    }
 } );
 
 // accuse
@@ -155,7 +244,7 @@ app.intent( 'are_you_sure', conv => {
     let response = { end: false, audioMessages: [ getMessage( 'are_you_sure' ) ] };
     sendResponse( conv, response );
 
-    // keep from hanging in the same yesy/no intent handler, so clear the context of the previous intent
+    // keep from hanging in the same yes/no intent handler, so clear the context of the previous intent
     conv.contexts.delete( 'continue_yes-followup' );
 
 } );
@@ -175,10 +264,10 @@ app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
     console.log( 'answer given: ', answer );
     let response = {};
     if ( answer === 'emma' ) {
-        response = { end: true, audioMessages: [ getMessage( 'accuse_correct' ) ] };
+        response = { end: true, audioMessages: [ getMessage( 'accuse_correct' ), getMessage( 'credits' ) ] };
     } else if ( answer in innocentCharacters ) {
         // TODO: Add specific wrong answer audio in between 2 messages, demo audio is missing
-        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ], MESSAGES[ 'accuse_wrong' ][ 1 ] ] };
+        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ], MESSAGES[ 'accuse_wrong' ][ 1 ], getMessage( 'credits' )  ] };
     } else {
         response = { end: true, audioMessages: [ getMessage( 'accuse__name_fallback' ) ] };
         console.log( 'error' );
@@ -199,8 +288,7 @@ app.intent( 'prompt-ready-for-room', conv => {
         audioMessages: [ getMessage( 'which_room' ) ]
     };
     sendResponse( conv, response );
-    // conv.contexts.delete( 'continue_yes-followup' );
-    // conv.contexts.delete( 'getroom-followup' );
+
 } );
 
 
@@ -251,9 +339,7 @@ app.intent( 'reset', conv => {
 // } );
 
 
-//// Game logic
-const MAXROOMS = 8;
-let lastRoomPlayed = undefined;
+//// Audio files
 let MESSAGES = {
     'intro': [ 'I-01' ],
     'have_notes': [ 'I-02' ],
@@ -310,10 +396,11 @@ let MESSAGES = {
     'question_codes': [], //MISSING
     'question_bird': [], //MISSING
     'question_james': [], //MISSING
-    'waiting_sound': [ 'F-01-a', 'F-01-b', 'F-01-c', 'F-01-d', 'F-01-e', 'F-01-f', 'F-01-g', 'F-01-h' ], // + C
-    'waiting_sound_continue': [ 'F-02-a', 'F-02-b', 'F-02-c', 'F-02-d', 'F-02-e', 'F-02-f', 'F-02-g', 'F-02-h', 'F-02-i', 'F-02-j', 'F-02-k' ],
+    'waiting_sound': [ 'F-01-a', 'F-01-b', 'F-01-c', 'F-01-e', 'F-01-f', 'F-01-g', 'F-01-h' ], // + C
+    'waiting_sound_continue': [ 'F-02-a', 'F-02-b', 'F-02-c', 'F-02-d', 'F-02-e'],
     'fallback_yes_no': [ 'X-01-a', 'X-01-b', 'X-01-c', 'X-01-d', 'X-01-e', 'X-01-f', 'X-01-gg', 'X-01-h', 'X-01-i', 'X-01-j' ],
-    'fallback': [] //MISSING
+    'fallback': [], //MISSING
+    'credits' :[ 'F-01-a' ]
 };
 
 let innocentCharacters = {

@@ -27,7 +27,7 @@ For instance, if the users triggers the system by saying "A", you can define an 
 To test the game with local code:
 - npm install
 - use ngrok to start url-forwarding: `ngrok http 8080`
-- start server using the resulting ngrok url, for instance:`URL=https://d90a3f22.ngrok.io npm run start`
+- start server using the resulting ngrok url, for instance:`URL=https://d90a3f22.ngrok.io npm run start` (ALWAYS USE HTTPS)
 - configure fullfilment in dialogflow (set fullfillement url to `https://d90a3f22.ngrok.io/app`)
 
 When using 'test in Google assistant': 
@@ -45,6 +45,7 @@ Done:
 - Returning visitor flow
 - Game logic (listening rooms, keeping tracks of rooms listened and how may rooms are left to listen)
 - Answer flow for correct/incorrect answer
+
 
 Todo / unfinished:
 - Roomlisten flow (see https://docs.google.com/document/d/1IGKbORkLrWJ7zimeghas7CYjfIx8ZJIH4WewbNV-BkI/edit?ts=5c9b3b3b )
