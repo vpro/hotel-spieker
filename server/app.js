@@ -16,7 +16,7 @@ var port = process.env.PORT || 8080;
 
 const audioRoot = ( process.env.URL || 'https://hotelspieker.binnenkort-op.vpro.nl' ) + '/public/testaudio-v2/';
 const audioFormat = 'mp3';
-const MAXROOMS = 2;
+const MAXROOMS = 8;
 let lastRoomPlayed = undefined;
 
 
