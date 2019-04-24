@@ -2,7 +2,7 @@ const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 
 // Import the appropriate service and chosen wrappers
-const { dialogflow, Suggestions, MediaObject, Image, SimpleResponse } = require( 'actions-on-google' );
+const { dialogflow } = require( 'actions-on-google' );
 
 // Create an app instance
 const app = dialogflow( {
@@ -16,73 +16,64 @@ var port = process.env.PORT || 8080;
 
 const audioRoot = ( process.env.URL || 'https://hotelspieker.binnenkort-op.vpro.nl' ) + '/public/testaudio-v2/';
 const audioFormat = 'mp3';
-const MAXROOMS = 8;
+const MAXROOMS = 2;
 let lastRoomPlayed = undefined;
 
 
 // TODO:
-// - check NO's in intro
-// - set contexts to start listening to rooms // backup first!!!!!
 // - credits
 
 ///// START MIDDLEWARE ////////
-
 app.middleware( conv => {
     // will run before running the intent handler
-    console.log( conv.intent, conv.contexts );
+    console.log( '////////// intent received: ' + conv.intent + ' ////////////' );
+    console.log( 'contexts:', conv.contexts );
 } );
 
-///// START INTENTS ////////
 
+///// START INTENTS ////////
 app.intent( 'intro', ( conv ) => {
     conv.user.storage = {};
-    let response = { end: false, audioMessages: [ getMessage( 'intro' ), getMessage( 'have_notes' ) ] };
+    let response = { audioMessages: [ getMessage( 'intro' ), getMessage( 'have_notes' ) ] };
     sendResponse( conv, response );
 } );
 
 app.intent( 'have_notes_yes', ( conv ) => {
     let response = {
-        end: false,
         audioMessages: [ getMessage( 'have_notes_yes' ), getMessage( 'have_notes_yes_continued' ) ]
     };
     sendResponse( conv, response );
 
-    // keep from hanging in the same yesy/no intent handler, so clear the context of the previous intent
+    // keep from hanging in the same yes / no intent handler, so clear the context of the previous intent
     conv.contexts.delete( 'intro-followup' );
 
 } );
 
 app.intent( 'have_notes_no', ( conv ) => {
-    // let response = { end: false, audioMessages: [ getMessage( 'have_notes_no' ), getMessage( 'have_notes' ) ] };
-    // sendResponse( conv, response );
     conv.followup( 'actions_intent_NO_NOTES' );
 } );
 
 app.intent( 'user_has_no_notes', ( conv ) => {
-    let response = { end: false, audioMessages: [ getMessage( 'have_notes_no' ), getMessage( 'have_notes' ) ] };
+    let response = { audioMessages: [ getMessage( 'have_notes_no' ), getMessage( 'have_notes' ) ] };
     sendResponse( conv, response );
 } );
 
 app.intent( 'follow_henk_yes', ( conv ) => {
-    let response = {
-        end: false,
-        audioMessages: [ getMessage( 'follow_henk_yes' ) ]
-    };
+    let response = { audioMessages: [ getMessage( 'follow_henk_yes' ) ] };
     sendResponse( conv, response );
 
-    // keep from hanging in the same yesy/no intent handler, so clear the context of the previous intent
+    // keep from hanging in the same yes / no intent handler, so clear the context of the previous intent
     conv.contexts.delete( 'have_notes_yes-followup' );
 } );
 
 app.intent( 'follow_henk_no', ( conv ) => {
-    let response = { end: false, audioMessages: [ getMessage( 'follow_henk_no' ) ] };
+    let response = { end: true, audioMessages: [ getMessage( 'follow_henk_no' ) ] };
     sendResponse( conv, response );
 } );
 
 app.intent( 'provide_help_yes', ( conv ) => {
-    //TODO: in het script staat : 'goto kamerkeuze', maar je mag altijd in het spel 'speel kamer 12' zeggen. Dus misschien kunnen we achter deze berichten volstaan met 'welke kamer wil je horen?'
 
-    let response = { end: false, audioMessages: [ getMessage( 'provide_help_yes' ), getMessage( 'which_room' ) ] };
+    let response = { audioMessages: [ getMessage( 'provide_help_yes' ), getMessage( 'which_room' ) ] };
     sendResponse( conv, response );
 
     // keep from hanging in the same yesy/no intent handler, so clear the context of the previous intent
@@ -90,7 +81,7 @@ app.intent( 'provide_help_yes', ( conv ) => {
 } );
 
 app.intent( 'provide_help_no', ( conv ) => {
-    let response = { end: false, audioMessages: [ getMessage( 'provide_help_no' ) ] };
+    let response = { end: true, audioMessages: [ getMessage( 'provide_help_no' ) ] };
     sendResponse( conv, response );
 } );
 
@@ -104,28 +95,17 @@ app.intent( 'get_room_yes', conv => {
     conv.followup( 'actions_intent_AREYOUSURE' );
 } );
 
-app.intent( 'get_room_no', conv => {
 
-    let response = {
-        end: false,
-        audioMessages: []
-    };
-
-    if ( getAmountRoomsListened( conv ) === MAXROOMS ) {
-        // teveel geluisterd
-        response.audioMessages = [ ( MESSAGES[ 'max_rooms_reached' ] ), getMessage( 'end_room_question' ) ];
-        sendResponse( conv, response );
-
-        //TODO
-    } else {
-        conv.followup( 'actions_intent_READYFORANOTHER' );
-    }
-
-} );
+// app.intent( 'out_of_rooms_yes', conv => {
+//     conv.followup( 'actions_intent_FORCEACCUSE' );
+// } );
+//
+// app.intent( 'out_of_rooms_no', conv => {
+//     conv.ask( 'bla bla bla' );
+// } );
 
 app.intent( 'ready_for_another_room', conv => {
     let response = {
-        end: false,
         audioMessages: []
     };
     conv.contexts.delete( 'ask_for_accusation' );
@@ -148,7 +128,6 @@ app.intent( 'ready_for_another_room_no', conv => {
 
 app.intent( 'waiting', conv => {
     let response = {
-        end: false,
         audioMessages: []
     };
     conv.contexts.delete( 'ready_for_another_room-followup' );
@@ -174,7 +153,6 @@ app.intent( 'waiting_yes', conv => {
 
 app.intent( 'waiting_again', conv => {
     let response = {
-        end: false,
         audioMessages: []
     };
     conv.contexts.delete( 'waiting_followup' );
@@ -196,7 +174,7 @@ app.intent( 'waiting_again_yes', conv => {
 
 // start welcome back
 app.intent( 'welcome_back', conv => {
-    let response = { end: false, audioMessages: [ getMessage( 'welcome_back' ) ] };
+    let response = { audioMessages: [ getMessage( 'welcome_back' ) ] };
     sendResponse( conv, response );
 } );
 
@@ -207,13 +185,10 @@ app.intent( 'continue_no', conv => {
 
 app.intent( 'continue_yes', conv => {
     let response = {
-        end: false,
         audioMessages: [ MESSAGES[ 'rooms_left' ][ getRoomsLeft( conv ) ], getMessage( 'end_room_question' ) ]
     };
     sendResponse( conv, response );
     conv.contexts.delete( 'welcome_back-followup' );
-
-    // TODO: set context!
 
 } );
 
@@ -221,43 +196,43 @@ app.intent( 'continue_yes_accusing', conv => {
     conv.followup( 'actions_intent_AREYOUSURE' );
 } );
 
-app.intent( 'continue_yes_notaccusing', conv => {
-    // conv.followup( 'actions_intent_READYFORROOM' );
+app.intent( ['are_you_sure_no','continue_yes_notaccusing', 'get_room_no' ], conv => {
+
     let response = {
-        end: false,
         audioMessages: []
     };
 
-    if ( getAmountRoomsListened( conv ) === MAXROOMS ) {
+    if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
         // teveel geluisterd
-        response.audioMessages = [ ( MESSAGES[ 'max_rooms_reached' ] ), getMessage( 'end_room_question' ) ];
+        response.audioMessages = [ ( getMessage( 'max_rooms_reached' ) ), getMessage( 'end_room_question' ) ];
         sendResponse( conv, response );
-
-        //TODO
     } else {
         conv.followup( 'actions_intent_READYFORANOTHER' );
     }
+
 } );
 
 // accuse
 app.intent( 'are_you_sure', conv => {
-    let response = { end: false, audioMessages: [ getMessage( 'are_you_sure' ) ] };
-    sendResponse( conv, response );
 
     // keep from hanging in the same yes/no intent handler, so clear the context of the previous intent
     conv.contexts.delete( 'continue_yes-followup' );
 
+    if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
+        // skip step 'are you sure' because we cant lsiten any more rooms anyway
+        conv.followup( 'actions_intent_FORCEACCUSE' );
+    } else {
+        let response = { audioMessages: [ getMessage( 'are_you_sure' ) ] };
+        sendResponse( conv, response );
+    }
+
 } );
 
 app.intent( 'are_you_sure_yes', conv => {
-    let response = { end: false, audioMessages: [ getMessage( 'are_you_sure_yes' ) ] };
+    let response = { audioMessages: [ getMessage( 'are_you_sure_yes' ) ] };
     sendResponse( conv, response );
 } );
 
-app.intent( 'are_you_sure_no', conv => {
-    let response = { end: false, audioMessages: [ getMessage( 'are_you_sure_no' ) ] };
-    sendResponse( conv, response );
-} );
 
 app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
     let answer = conv.parameters[ 'name' ] ? conv.parameters[ 'name' ].toLowerCase() : '';
@@ -269,9 +244,11 @@ app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
         // TODO: Add specific wrong answer audio in between 2 messages, demo audio is missing
         response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ], MESSAGES[ 'accuse_wrong' ][ 1 ], getMessage( 'credits' )  ] };
     } else {
+        // TODO what to do when a name is not matched?
         response = { end: true, audioMessages: [ getMessage( 'accuse__name_fallback' ) ] };
         console.log( 'error' );
     }
+    conv.user.storage = {};
     sendResponse( conv, response );
 } );
 
@@ -283,10 +260,7 @@ app.intent( 'accuse_fallback', conv => {
 } );
 
 app.intent( 'prompt-ready-for-room', conv => {
-    let response = {
-        end: false,
-        audioMessages: [ getMessage( 'which_room' ) ]
-    };
+    let response = { audioMessages: [ getMessage( 'which_room' ) ] };
     sendResponse( conv, response );
 
 } );
@@ -300,7 +274,6 @@ app.intent( 'say_bye', ( conv ) => {
 } );
 
 app.intent( 'Default Welcome Intent', conv => {
-    console.log( conv.user.storage );
     if ( !conv.user.storage || ( Object.keys( conv.user.storage ).length === 0 && conv.user.storage.constructor === Object ) ) {
         console.log( 'trigger actions_intent_STARTGAME' );
         conv.followup( 'actions_intent_STARTGAME' );
@@ -312,31 +285,20 @@ app.intent( 'Default Welcome Intent', conv => {
 
 
 app.intent( 'Default Fallback Intent', conv => {
-    let response = { end: false, audioMessages: [ MESSAGES[ 'stop' ] ] };
+    // TODO better fallback messages
+    let response = { audioMessages: [ MESSAGES[ 'stop' ] ] };
     sendResponse( conv, response );
 } );
 
-//TODO is this needed?
 app.intent( 'repeatRoom', conv => {
     let response = playRoom( conv, true );
     sendResponse( conv, response );
-    console.log( getAmountRoomsListened( conv ) );
 } );
 
 app.intent( 'reset', conv => {
     conv.user.storage = {};
     conv.close( 'okay, herstart hotel spieker om opnieuw te beginnen' );
 } );
-
-
-// generic intents
-// app.intent( [ 'have_notes_no','follow_henk_yes', 'follow_henk_no','give_help_yes', 'give_help_no', 'call_henk','no_recording', 'empty_room','know_answer_yes','know_answer_no','know_anwser_unclear','accuse','accuse_yes', 'accuse_correct' , 'accuse_no','help','help_yes','help_no','help_sufficient', 'help_insufficient', 'question_rooms', 'question_map', 'question_crimescene','question_guestlist', 'question_codes', 'question_bird', 'question_james'], ( conv ) => {
-//     let response = { end : false, audioMessages : [ getMessage( conv.intent ) ] };
-//     console.log(conv.intent);
-//     console.log(response);
-//
-//     sendResponse( conv, response );
-// } );
 
 
 //// Audio files
@@ -623,13 +585,12 @@ let getRoom = ( id ) => {
 let playRoom = ( conv, repeat ) => {
 
     let response = {
-        end: false,
         audioMessages: []
     };
 
     let room = getRoom( repeat ? conv.user.storage.lastRoomPlayed : conv.parameters.roomnumber );
 
-    if ( getAmountRoomsListened( conv ) === MAXROOMS ) {
+    if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
         // teveel geluisterd
         response.audioMessages.push( MESSAGES[ 'max_rooms_reached' ] );
         response.audioMessages.push( getMessage( 'end_room_question' ) );
@@ -640,7 +601,6 @@ let playRoom = ( conv, repeat ) => {
         // lege kamers hebben ook een repsonse nodig, om de teller bij te kunnen houden
         setRoomListened( conv, room.id );
         setLastPlayed( conv, room.id );
-        // response.audioMessages.push( MESSAGES[ 'no_room' ] );
         conv.ask( 'daar zit niemand, welke kamer wil je horen?' ) // TODO MISSING
     } else if ( getAmountRoomsListened( conv ) !== MAXROOMS && !room.listened ) {
         // ja mag ;
