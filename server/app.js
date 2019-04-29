@@ -251,19 +251,11 @@ app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
     sendResponse( conv, response );
 } );
 
-
-app.intent( 'accuse_fallback', conv => {
-    // Todo replace 'stop' with correct audio when we have it
-    let response = { end: true, audioMessages: getMessage( 'stop' ) };
-    sendResponse( conv, response );
-} );
-
 app.intent( 'prompt-ready-for-room', conv => {
     let response = { audioMessages: [ getMessage( 'which_room' ) ] };
     sendResponse( conv, response );
 
 } );
-
 
 /////////
 // Dialogflow agent 'say_bye' intent handles 'actions_intent_CANCEL' event
