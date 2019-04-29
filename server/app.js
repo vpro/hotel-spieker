@@ -17,11 +17,7 @@ var port = process.env.PORT || 8080;
 const audioRoot = ( process.env.URL || 'https://hotelspieker.binnenkort-op.vpro.nl' ) + '/public/audio/';
 const audioFormat = 'mp3';
 const MAXROOMS = 8;
-let lastRoomPlayed = undefined;
-
-
-// TODO:
-// - credits
+const DEMO_ID = '6b0434fe-82d5-43da-96ad-0da7377de3e4';
 
 ///// START MIDDLEWARE ////////
 app.middleware( conv => {
@@ -33,7 +29,7 @@ app.middleware( conv => {
 
 ///// START INTENTS ////////
 app.intent( 'intro', ( conv ) => {
-    conv.user.storage = {};
+
     let response = { audioMessages: [ getMessage( 'intro' ), getMessage( 'have_notes' ) ] };
     sendResponse( conv, response );
 } );
@@ -67,6 +63,7 @@ app.intent( 'follow_henk_yes', ( conv ) => {
 } );
 
 app.intent( 'follow_henk_no', ( conv ) => {
+    conv.user.storage = {};
     let response = { end: true, audioMessages: [ getMessage( 'follow_henk_no' ) ] };
     sendResponse( conv, response );
 } );
@@ -81,6 +78,7 @@ app.intent( 'provide_help_yes', ( conv ) => {
 } );
 
 app.intent( 'provide_help_no', ( conv ) => {
+    conv.user.storage = {};
     let response = { end: true, audioMessages: [ getMessage( 'provide_help_no' ) ] };
     sendResponse( conv, response );
 } );
@@ -124,7 +122,12 @@ app.intent( 'waiting', conv => {
     conv.contexts.delete( 'ready_for_another_room-followup' );
     conv.contexts.delete( 'ask_for_accusation' );
 
-    response.audioMessages = [ getMessage( 'waiting_sound' ) ];
+    if ( !conv.user.storage.waitingDone ) {
+        response.audioMessages = [ MESSAGES[ 'waiting_sound' ][ 0 ] ];
+    } else {
+        conv.user.storage.waitingDone = true;
+        response.audioMessages = [ getMessage( 'waiting_sound' ) ];
+    }
     sendResponse( conv, response );
 } );
 
@@ -174,8 +177,11 @@ app.intent( 'continue_no', conv => {
 } );
 
 app.intent( 'continue_yes', conv => {
+    let roomsleft = getRoomsLeft( conv ) || (  MAXROOMS  );
+    console.log( 'rooms left:', roomsleft );
+
     let response = {
-        audioMessages: [ MESSAGES[ 'rooms_left' ][ getRoomsLeft( conv ) ], getMessage( 'end_room_question' ) ]
+        audioMessages: [ MESSAGES[ 'rooms_left' ][ roomsleft - 1 ], getMessage( 'end_room_question' ) ]
     };
     sendResponse( conv, response );
     conv.contexts.delete( 'welcome_back-followup' );
@@ -202,7 +208,7 @@ app.intent( ['are_you_sure_no','continue_yes_notaccusing', 'get_room_no' ], conv
 
 } );
 
-//fallback for all yes/no questions
+// fallback for all yes/no questions
 app.intent( [ 'have_notes_fallback', 'follow_henk_fallback',  'provide_help_fallback', 'get_room-fallback', 'ready_for_another_room_fallback', 'waiting_fallback', 'continue_fallback', 'waiting_again_fallback', 'are_you_sure-fallback', 'help_fallback' , 'help_no_fallback' ], conv => {
     let response = { audioMessages : [ getMessage( 'fallback_yes_no' ) ] };
     sendResponse( conv, response );
@@ -223,7 +229,7 @@ app.intent( 'are_you_sure', conv => {
         // skip step 'are you sure' because we cant lsiten any more rooms anyway
         conv.followup( 'actions_intent_FORCEACCUSE' );
     } else {
-        let response = { audioMessages: [ getMessage( 'are_you_sure' ) ] };
+        let response = { audioMessages: [ MESSAGES[ 'are_you_sure' ][ getRoomsLeft( conv ) ] ] };
         sendResponse( conv, response );
     }
 
@@ -267,13 +273,8 @@ app.intent( 'say_bye', ( conv ) => {
 } );
 
 app.intent( 'Default Welcome Intent', conv => {
-    if ( !conv.user.storage || ( Object.keys( conv.user.storage ).length === 0 && conv.user.storage.constructor === Object ) ) {
-        console.log( 'trigger actions_intent_STARTGAME' );
-        conv.followup( 'actions_intent_STARTGAME' );
-    } else {
-        console.log( 'trigger actions_intent_WELCOMEBACK' );
-        conv.followup( 'actions_intent_WELCOMEBACK' );
-    }
+    console.log( 'trigger actions_intent_WELCOMEBACK' );
+    conv.followup( 'actions_intent_WELCOMEBACK' );
 } );
 
 
@@ -292,15 +293,8 @@ app.intent( 'reset', conv => {
 } );
 
 app.intent( 'help', conv => {
-    conv.contexts.delete( 'roomlistened' );
-    conv.contexts.delete( 'ask_for_accusation' );
-    conv.contexts.delete( 'getRoom-followup' );
-    conv.contexts.delete( 'welcome_back-followup' );
-    conv.contexts.delete( 'waiting_followup' );
-    conv.contexts.delete( 'ready_for_another_room-followup' );
-    conv.contexts.delete( 'innocentCharacters' );
-    conv.contexts.delete( 'follow_henk_yes-followup' );
-    conv.contexts.delete( 'intro-followup' );
+
+    deleteAllContexts( conv );
 
     let response = { audioMessages: [ getMessage( 'help' ) ] };
     sendResponse( conv, response );
@@ -362,47 +356,39 @@ let MESSAGES = {
     'end_room_question': [ 'C-01-a', 'C-01-b', 'C-01-c', 'C-01-d' ],
     'another_room': [ 'D-01-a', 'D-01-b', 'D-01-c', 'D-01-d' ],
     'another_room_yes': [ 'D-02-a', 'D-02-b', 'D-02-c', 'D-02-d', 'D-02-e', 'D-02-f', 'D-02-g' ],
-    'another_room_no': [],
+    'another_room_no': [''],
     'another_room_fallback': [ 'FB-A-a', 'FB-A-b', 'FB-A-c', 'FB-A-d', 'FB-A-e', ],
-    'know_answer_yes': [],
+    'know_answer_yes': [''],
     'know_answer_no': [ 'C-02-a', 'C-02-b', 'C-02-c' ],
-    'know_answer_unclear': [], //MISSING?
-    'are_you_sure' : [ 'J-02','J-01.8','J-01.7','J-01.6','J-01.5','J-01.4','J-01.3','J-01.2','J-01.1' ],
+    'know_answer_unclear': [], // MISSING ?
+    'are_you_sure' : [ 'J-01.8_v2','J-01.7_v2','J-01.6_v2','J-01.5_v2','J-01.4_v2','J-01.3_v2','J-01.2_v2','J-01.1_v2' ],
     'are_you_sure_yes': [ 'W-01' ],
-    'are_you_sure_no': [],
+    'are_you_sure_no': [''],
     'accuse_fallback': [ '' ],
     'accuse_correct': [ 'E-01' ],
     'accuse_wrong': [ 'E-02-1', 'E-02-2' ],
     'accuse__name_fallback': [ 'FB-W-a', 'FB-W-b', 'FB-W-c', 'FB-W-d' ],
     'rooms_left': [ 'B-01.8-a', 'B-01.7-a', 'B-01.6', 'B-01.5', 'B-01.4', 'B-01.3', 'B-01.2', 'B-01.1' ], // TODO add alternatives voor 7 and 8
     'welcome_back': [ 'H-01' ],
-    'welcome_back_continue': [],
+    'welcome_back_continue': [''],
     'welcome_back_reset': [ 'H-03' ],
-    'welcome_back_reset_yes': [],
-    'welcome_back_reset_no': [],
+    'welcome_back_reset_yes': [''],
+    'welcome_back_reset_no': [''],
     'max_rooms_reached': [ 'L-01-a', 'L-01-b', 'L-01-c' ], // + C
     'stop': [ 'S' ],
-    /// questions
     'help': [ 'Z-01' ],
     'help_yes': [ 'Z-02-1', 'Z-02-2', 'Z-02-3', 'Z-02-4', 'Z-02-5' ],
-    'help_yes_sufficient': [],
+    'help_yes_sufficient': [''],
     'help_yes_insufficient': [ 'Z-04' ],
-    'help_yes_insufficient_yes': [],
+    'help_yes_insufficient_yes': [''],
     'help_yes_insufficient_no': [ 'Z-04' ],
     'help_no': [ 'Z-07' ],
     'help_no_sufficient': [ 'Z-08' ], // + A
     'help_no_insufficient': [ 'Z-09' ], // + F
-    'question_rooms': [], //MISSING
-    'question_map': [], //MISSING
-    'question_crimescene': [], //MISSING
-    'question_guestlist': [], //MISSING
-    'question_codes': [], //MISSING
-    'question_bird': [], //MISSING
-    'question_james': [], //MISSING
     'waiting_sound': [ 'F-01-a', 'F-01-b', 'F-01-c', 'F-01-e', 'F-01-f', 'F-01-g', 'F-01-h' ], // + C
     'waiting_sound_continue': [ 'F-02-a', 'F-02-b', 'F-02-c', 'F-02-d', 'F-02-e', 'F-02-f', 'F-02-g', 'F-02-h', 'F-02-i', 'F-02-j' , 'F-02-k'],
     'fallback_yes_no': [ 'X-01-a', 'X-01-b', 'X-01-c', 'X-01-d', 'X-01-e', 'X-01-f', 'X-01-g', 'X-01-h', 'X-01-i', 'X-01-j' ],
-    'fallback': [], //MISSING
+    'fallback': [''], // MISSING
     'credits' :[ 'E-19' ]
 };
 
@@ -458,7 +444,7 @@ let rooms = [
     },
     {
         id: "6",
-        audiofile: 'K-06'
+        audiofile: 'K-06_v2'
     },
     {
         id: "7",
@@ -524,7 +510,7 @@ let rooms = [
     },
     {
         id: "20",
-        audiofile: 'K-20'
+        audiofile: 'K-20_v2'
     },
     {
         id: "21",
@@ -581,11 +567,22 @@ const getRandomItem = ( array ) => {
     return array[ Math.floor( Math.random() * ( array.length ) ) ];
 };
 
+let deleteAllContexts = ( conv, exceptions ) => {
+    let contexts = ['roomlistened', 'ask_for_accusation','getRoom-followup','welcome_back-followup' ,'waiting_followup', 'ready_for_another_room-followup' , 'innocentCharacters', 'follow_henk_yes-followup' , 'intro-followup'  ]
+
+    contexts.map( ( context ) => {
+        if ( ! context.in( exceptions )  ) {
+            conv.contexts.delete( context );
+        }
+    } );
+};
+
+
 let getRoomsListened = ( conv ) => {
     if ( !conv.user.storage.roomsListened ) {
         conv.user.storage.roomsListened = [];
     }
-    console.log( conv.user.storage.roomsListened + 'rooms listened' );
+    console.log( 'rooms listened:' , conv.user.storage.roomsListened);
     return conv.user.storage.roomsListened;
 };
 
@@ -594,7 +591,11 @@ let getAmountRoomsListened = ( conv ) => {
 };
 
 let getRoomsLeft = ( conv ) => {
-    return MAXROOMS - getAmountRoomsListened( conv );
+    let amountListened = getAmountRoomsListened( conv );
+    if ( !amountListened ) {
+        amountListened = 0
+    }
+    return MAXROOMS - amountListened;
 };
 
 let setRoomListened = ( conv, id ) => {
@@ -643,14 +644,12 @@ let playRoom = ( conv, repeat ) => {
         // kamer bestaat niet
         response.audioMessages.push( MESSAGES[ 'no_room' ] );
     } else if ( room.empty ) {
-        // lege kamers hebben ook een repsonse nodig, om de teller bij te kunnen houden
-        setRoomListened( conv, room.id );
         setLastPlayed( conv, room.id );
         conv.ask( 'daar zit niemand, welke kamer wil je horen?' ) // TODO MISSING
     } else if ( getAmountRoomsListened( conv ) !== MAXROOMS && !room.listened ) {
         // ja mag ;
         setRoomListened( conv, room.id );
-        lastRoomPlayed = room.id;
+        setLastPlayed( conv, room.id );
         response.audioMessages.push( getRoom( room.id ).audiofile );
         response.audioMessages.push( MESSAGES[ 'rooms_left' ][ getRoomsLeft( conv ) ] );
         response.audioMessages.push( getMessage( 'end_room_question' ) );
