@@ -243,7 +243,9 @@ app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
         response = { end: true, audioMessages: [ getMessage( 'accuse_correct' ), getMessage( 'credits' ) ] };
     } else if ( answer in innocentCharacters ) {
         response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters[ answer ], MESSAGES[ 'accuse_wrong' ][ 1 ] ] };
-    } else {
+    } else if ( answer in innocentCharacters2 ) {
+        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters2[ answer ] ] };
+}    else {
         response = { end: true, audioMessages: [ getMessage( 'accuse__name_fallback' ) ] };
         console.log( 'error' );
     }
@@ -417,6 +419,10 @@ let innocentCharacters = {
     'puk': [ 'E-12' ],
     'bob': [ 'E-13' ],
     'henk': [ 'E-14' ],
+};
+
+
+let innocentCharacters2 = {
     'pien': [ 'E-15' ],
     'evert': [ 'E-16' ],
     'steve': [ 'E-17' ],
