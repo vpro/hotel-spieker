@@ -361,7 +361,7 @@ let MESSAGES = {
     'know_answer_yes': [''],
     'know_answer_no': [ 'C-02-a', 'C-02-b', 'C-02-c' ],
     'know_answer_unclear': [], // MISSING ?
-    'are_you_sure' : [ 'J-01.8_v2','J-01.7_v2','J-01.6_v2','J-01.5_v2','J-01.4_v2','J-01.3_v2','J-01.2_v2','J-01.1_v2' ],
+    'are_you_sure' : [ 'J-01.8_v2','J-01.7_v2','J-01.6_v2','J-01.5_v2','J-01.4_v2','J-01.3_v2','J-01.2_v2','J-01.1_v2' ,'J-01.0' ],
     'are_you_sure_yes': [ 'W-01' ],
     'are_you_sure_no': [''],
     'accuse_fallback': [ '' ],
