@@ -14,7 +14,7 @@ const expressApp = express().use( bodyParser.json() );
 var ip = process.env.IP || '0.0.0.0';
 var port = process.env.PORT || 8080;
 
-const audioRoot = ( process.env.URL || 'https://hotelspieker.binnenkort-op.vpro.nl' ) + '/public/testaudio-v2/';
+const audioRoot = ( process.env.URL || 'https://hotelspieker.binnenkort-op.vpro.nl' ) + '/public/audio/';
 const audioFormat = 'mp3';
 const MAXROOMS = 8;
 let lastRoomPlayed = undefined;
@@ -95,15 +95,6 @@ app.intent( 'get_room_yes', conv => {
     conv.followup( 'actions_intent_AREYOUSURE' );
 } );
 
-
-// app.intent( 'out_of_rooms_yes', conv => {
-//     conv.followup( 'actions_intent_FORCEACCUSE' );
-// } );
-//
-// app.intent( 'out_of_rooms_no', conv => {
-//     conv.ask( 'bla bla bla' );
-// } );
-
 app.intent( 'ready_for_another_room', conv => {
     let response = {
         audioMessages: []
@@ -171,7 +162,6 @@ app.intent( 'waiting_again_yes', conv => {
     conv.followup( 'actions_intent_READYFORROOM' );
 } );
 
-
 // start welcome back
 app.intent( 'welcome_back', conv => {
     let response = { audioMessages: [ getMessage( 'welcome_back' ) ] };
@@ -212,11 +202,22 @@ app.intent( ['are_you_sure_no','continue_yes_notaccusing', 'get_room_no' ], conv
 
 } );
 
+//fallback for all yes/no questions
+app.intent( [ 'have_notes_fallback', 'follow_henk_fallback',  'provide_help_fallback', 'get_room-fallback', 'ready_for_another_room_fallback', 'waiting_fallback', 'continue_fallback', 'waiting_again_fallback', 'are_you_sure-fallback', 'help_fallback' , 'help_no_fallback' ], conv => {
+    let response = { audioMessages : [ getMessage( 'fallback_yes_no' ) ] };
+    sendResponse( conv, response );
+} );
+
 // accuse
+app.intent( 'accuse', conv => {
+    conv.followup( 'actions_intent_AREYOUSURE' );
+});
+
 app.intent( 'are_you_sure', conv => {
 
     // keep from hanging in the same yes/no intent handler, so clear the context of the previous intent
     conv.contexts.delete( 'continue_yes-followup' );
+    conv.contexts.delete( 'ask_for_accusation' );
 
     if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
         // skip step 'are you sure' because we cant lsiten any more rooms anyway
@@ -241,10 +242,8 @@ app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
     if ( answer === 'emma' ) {
         response = { end: true, audioMessages: [ getMessage( 'accuse_correct' ), getMessage( 'credits' ) ] };
     } else if ( answer in innocentCharacters ) {
-        // TODO: Add specific wrong answer audio in between 2 messages, demo audio is missing
-        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ], MESSAGES[ 'accuse_wrong' ][ 1 ], getMessage( 'credits' )  ] };
+        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters[ answer ], MESSAGES[ 'accuse_wrong' ][ 1 ] ] };
     } else {
-        // TODO what to do when a name is not matched?
         response = { end: true, audioMessages: [ getMessage( 'accuse__name_fallback' ) ] };
         console.log( 'error' );
     }
@@ -285,9 +284,7 @@ app.intent( 'Default Welcome Intent', conv => {
 
 
 app.intent( 'Default Fallback Intent', conv => {
-    // TODO better fallback messages
-    let response = { audioMessages: [ MESSAGES[ 'stop' ] ] };
-    sendResponse( conv, response );
+    conv.ask( 'sorry, dit begrijp ik niet helemaal.' );
 } );
 
 app.intent( 'repeatRoom', conv => {
@@ -298,6 +295,57 @@ app.intent( 'repeatRoom', conv => {
 app.intent( 'reset', conv => {
     conv.user.storage = {};
     conv.close( 'okay, herstart hotel spieker om opnieuw te beginnen' );
+} );
+
+app.intent( 'help', conv => {
+    conv.contexts.delete( 'roomlistened' );
+    conv.contexts.delete( 'ask_for_accusation' );
+    conv.contexts.delete( 'getRoom-followup' );
+    conv.contexts.delete( 'welcome_back-followup' );
+    conv.contexts.delete( 'waiting_followup' );
+    conv.contexts.delete( 'ready_for_another_room-followup' );
+    conv.contexts.delete( 'innocentCharacters' );
+    conv.contexts.delete( 'follow_henk_yes-followup' );
+    conv.contexts.delete( 'intro-followup' );
+
+    let response = { audioMessages: [ getMessage( 'help' ) ] };
+    sendResponse( conv, response );
+} );
+
+app.intent( 'help_yes', conv => {
+    conv.contexts.delete( 'help-followup' );
+
+    let response = { audioMessages: [ getMessage( 'help_yes' ) ] };
+    sendResponse( conv, response );
+} );
+
+app.intent( ['help_yes_insufficient'], conv => {
+    let response = { audioMessages: [ getMessage( 'help_yes_insufficient' ) ] };
+    sendResponse( conv, response );
+} );
+
+app.intent( ['help_again_yes'], conv => {
+    conv.followup( 'actions_intent_HELPNEEDED' );
+} );
+
+app.intent( ['help_again_no'], conv => {
+    conv.followup( 'actions_intent_READYFORROOM' );
+} );
+
+app.intent( 'help_no', conv => {
+    conv.contexts.delete( 'help_followup' );
+
+    let response = { audioMessages: [ getMessage( 'help_no' ) ] };
+    sendResponse( conv, response );
+} );
+
+app.intent( ['help_no_sufficient','help_yes_sufficient'], conv => {
+    conv.followup( 'actions_intent_READYFORROOM' );
+} );
+
+app.intent( 'help_no_insufficient', conv => {
+    let response = { audioMessages: [ getMessage( 'help_no_insufficient' ) ] };
+    sendResponse( conv, response );
 } );
 
 
@@ -314,40 +362,39 @@ let MESSAGES = {
     'provide_help_no': [ 'I-09' ],
     'which_room': [ 'A-01-a', 'A-01-b', 'A-01-c', 'A-01-d' ],
     'which_room_fallback': [ 'FB-A-a', 'FB-A-b', 'FB-A-c', 'FB-A-d', 'FB-A-e' ],
-    'no_recording': [], // missing in scenes
-    'empty_room': [ '' ], // missing in scenes
+    'no_recording': ['FB-A-1'], // MISSING ?
+    'empty_room': [ 'FB-A-1' ], // MISSING ?
     'no_room': [ 'FB-A-1' ],
     'end_room_question': [ 'C-01-a', 'C-01-b', 'C-01-c', 'C-01-d' ],
     'another_room': [ 'D-01-a', 'D-01-b', 'D-01-c', 'D-01-d' ],
     'another_room_yes': [ 'D-02-a', 'D-02-b', 'D-02-c', 'D-02-d', 'D-02-e', 'D-02-f', 'D-02-g' ],
-    'another_room_no': [], // +F
-    'another_room_fallback': [], // + X
-    'know_answer_yes': [], // + J
-    'know_answer_no': [ 'C-02-a', 'C-02-b', 'C-02-c' ], // + D
+    'another_room_no': [],
+    'another_room_fallback': [ 'FB-A-a', 'FB-A-b', 'FB-A-c', 'FB-A-d', 'FB-A-e', ],
+    'know_answer_yes': [],
+    'know_answer_no': [ 'C-02-a', 'C-02-b', 'C-02-c' ],
     'know_answer_unclear': [], //MISSING?
-    'are_you_sure': [ 'J' ],
-    // 'are_you_sure' : [ 'J-02','J-01.8','J-01.7','J-01.6','J-01.5','J-01.4','J-01.3','J-01.2','J-01.1' ],
-    'are_you_sure_yes': [ 'W' ],
-    'are_you_sure_no': [], // + G
-    'accuse_fallback': [ '' ], // + X
-    'accuse_correct': [ 'E-01' ], // + E19
+    'are_you_sure' : [ 'J-02','J-01.8','J-01.7','J-01.6','J-01.5','J-01.4','J-01.3','J-01.2','J-01.1' ],
+    'are_you_sure_yes': [ 'W-01' ],
+    'are_you_sure_no': [],
+    'accuse_fallback': [ '' ],
+    'accuse_correct': [ 'E-01' ],
     'accuse_wrong': [ 'E-02-1', 'E-02-2' ],
     'accuse__name_fallback': [ 'FB-W-a', 'FB-W-b', 'FB-W-c', 'FB-W-d' ],
-    'rooms_left': [ 'B-01.8', 'B-01.7', 'B-01.6', 'B-01.5', 'B-01.4', 'B-01.3', 'B-01.2', 'B-01.1' ], // + C
+    'rooms_left': [ 'B-01.8-a', 'B-01.7-a', 'B-01.6', 'B-01.5', 'B-01.4', 'B-01.3', 'B-01.2', 'B-01.1' ], // TODO add alternatives voor 7 and 8
     'welcome_back': [ 'H-01' ],
-    'welcome_back_continue': [], // + B
+    'welcome_back_continue': [],
     'welcome_back_reset': [ 'H-03' ],
-    'welcome_back_reset_yes': [], // + I-01
-    'welcome_back_reset_no': [], // + H-01
+    'welcome_back_reset_yes': [],
+    'welcome_back_reset_no': [],
     'max_rooms_reached': [ 'L-01-a', 'L-01-b', 'L-01-c' ], // + C
     'stop': [ 'S' ],
     /// questions
     'help': [ 'Z-01' ],
     'help_yes': [ 'Z-02-1', 'Z-02-2', 'Z-02-3', 'Z-02-4', 'Z-02-5' ],
-    'help_yes_sufficient': [], // + A
+    'help_yes_sufficient': [],
     'help_yes_insufficient': [ 'Z-04' ],
-    'help_yes_insufficient_yes': [], // + Z2 (help_yes)
-    'help_yes_insufficient_no': [ 'Z-04' ], // + Z7(help_no)
+    'help_yes_insufficient_yes': [],
+    'help_yes_insufficient_no': [ 'Z-04' ],
     'help_no': [ 'Z-07' ],
     'help_no_sufficient': [ 'Z-08' ], // + A
     'help_no_insufficient': [ 'Z-09' ], // + F
@@ -359,10 +406,10 @@ let MESSAGES = {
     'question_bird': [], //MISSING
     'question_james': [], //MISSING
     'waiting_sound': [ 'F-01-a', 'F-01-b', 'F-01-c', 'F-01-e', 'F-01-f', 'F-01-g', 'F-01-h' ], // + C
-    'waiting_sound_continue': [ 'F-02-a', 'F-02-b', 'F-02-c', 'F-02-d', 'F-02-e'],
-    'fallback_yes_no': [ 'X-01-a', 'X-01-b', 'X-01-c', 'X-01-d', 'X-01-e', 'X-01-f', 'X-01-gg', 'X-01-h', 'X-01-i', 'X-01-j' ],
+    'waiting_sound_continue': [ 'F-02-a', 'F-02-b', 'F-02-c', 'F-02-d', 'F-02-e', 'F-02-f', 'F-02-g', 'F-02-h', 'F-02-i', 'F-02-j' , 'F-02-k'],
+    'fallback_yes_no': [ 'X-01-a', 'X-01-b', 'X-01-c', 'X-01-d', 'X-01-e', 'X-01-f', 'X-01-g', 'X-01-h', 'X-01-i', 'X-01-j' ],
     'fallback': [], //MISSING
-    'credits' :[ 'F-01-a' ]
+    'credits' :[ 'E-19' ]
 };
 
 let innocentCharacters = {
