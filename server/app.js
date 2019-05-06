@@ -313,7 +313,18 @@ app.intent( 'reset', conv => {
 
 app.intent( 'help', conv => {
 
-    deleteAllContexts( conv );
+    conv.contexts.delete( 'roomlistened' );
+    conv.contexts.delete( 'ask_for_accusation' );
+    conv.contexts.delete( 'getRoom-followup' );
+    conv.contexts.delete( 'welcome_back-followup' );
+    conv.contexts.delete( 'waiting-followup' );
+    conv.contexts.delete( 'waiting_again-followup' );
+    conv.contexts.delete( 'ready_for_another_room-followup' );
+    conv.contexts.delete( 'innocentCharacters' );
+    conv.contexts.delete( 'follow_henk_yes-followup' );
+    conv.contexts.delete( 'intro-followup' );
+    conv.contexts.delete( 'continue_yes-followup' );
+    conv.contexts.delete( 'continue_yes-followup' );
 
     let response = { audioMessages: [ getMessage( 'help' ) ] };
     sendResponse( conv, response );
@@ -587,15 +598,7 @@ const getRandomItem = ( array ) => {
     return array[ Math.floor( Math.random() * ( array.length ) ) ];
 };
 
-let deleteAllContexts = ( conv, exceptions ) => {
-    let contexts = ['roomlistened', 'ask_for_accusation','getRoom-followup','welcome_back-followup' ,'waiting-followup', 'ready_for_another_room-followup' , 'innocentCharacters', 'follow_henk_yes-followup' , 'intro-followup'  ];
 
-    contexts.map( ( context ) => {
-        if ( ! context.in( exceptions )  ) {
-            conv.contexts.delete( context );
-        }
-    } );
-};
 
 
 let getRoomsListened = ( conv ) => {
