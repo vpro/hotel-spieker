@@ -365,7 +365,7 @@ let MESSAGES = {
     'have_notes_yes_continued': [ 'I-05' ],
     'follow_henk_yes': [ 'I-07' ],
     'follow_henk_no': [ 'I-06' ],
-    'provide_help_yes': [ 'I-08' ],
+    'provide_help_yes': [ 'I-08_v2' ],
     'provide_help_no': [ 'I-09' ],
     'which_room': [ 'A-01-a', 'A-01-b', 'A-01-c', 'A-01-d' ],
     'which_room_fallback': [ 'FB-A-a', 'FB-A-b', 'FB-A-c', 'FB-A-d', 'FB-A-e' ],
@@ -405,8 +405,8 @@ let MESSAGES = {
     'help_no': [ 'Z-07' ],
     'help_no_sufficient': [ 'Z-08' ], // + A
     'help_no_insufficient': [ 'Z-09' ], // + F
-    'waiting_sound': [ 'F-01-a', 'F-01-b', 'F-01-c', 'F-01-e', 'F-01-f', 'F-01-g', 'F-01-h' ], // + C
-    'waiting_sound_continue': [ 'F-02-a', 'F-02-b', 'F-02-c', 'F-02-d', 'F-02-e', 'F-02-f', 'F-02-g', 'F-02-h', 'F-02-i', 'F-02-j' , 'F-02-k'],
+    'waiting_sound': [ 'F-01-a_v2', 'F-01-b_v2', 'F-01-c_v2', 'F-01-e_v2', 'F-01-f_v2', 'F-01-g_v2', 'F-01-h_v2' ], // + C
+    'waiting_sound_continue': [ 'F-02-a_v2', 'F-02-b_v2', 'F-02-c_v2', 'F-02-d_v2', 'F-02-e_v2', 'F-02-f_v2', 'F-02-g_v2', 'F-02-h_v2', 'F-02-i_v2', 'F-02-j_v2' , 'F-02-k_v2'],
     'fallback_yes_no': [ 'X-01-a', 'X-01-b', 'X-01-c', 'X-01-d', 'X-01-e', 'X-01-f', 'X-01-g', 'X-01-h', 'X-01-i', 'X-01-j' ],
     'fallback': [''], // MISSING
     'credits' :[ 'E-19' ]
