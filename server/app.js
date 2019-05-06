@@ -105,12 +105,12 @@ app.intent( 'ready_for_another_room', conv => {
 } );
 
 app.intent( 'ready_for_another_room_yes', conv => {
-    conv.contexts.delete( 'ready_for_another_room_followup' );
+    conv.contexts.delete( 'ready_for_another_room-followup' );
     conv.followup( 'actions_intent_READYFORROOM' );
 } );
 
 app.intent( 'ready_for_another_room_no', conv => {
-    conv.contexts.delete( 'ready_for_another_room_followup' );
+    conv.contexts.delete( 'ready_for_another_room-followup' );
     conv.followup( 'actions_intent_WAITING' );
 } );
 
@@ -122,26 +122,22 @@ app.intent( 'waiting', conv => {
     conv.contexts.delete( 'ready_for_another_room-followup' );
     conv.contexts.delete( 'ask_for_accusation' );
 
-    if ( !conv.user.storage.waitingDone ) {
-        response.audioMessages = [ MESSAGES[ 'waiting_sound' ][ 0 ] ];
-    } else {
-        conv.user.storage.waitingDone = true;
-        response.audioMessages = [ getMessage( 'waiting_sound' ) ];
-    }
+    response.audioMessages = [ getMessage( 'waiting_sound' ) ];
+
     sendResponse( conv, response );
 } );
 
 app.intent( 'waiting_no', conv => {
-    conv.contexts.delete( 'waiting_followup' );
+    conv.contexts.delete( 'waiting-followup' );
     conv.contexts.delete( 'ready_for_another_room-followup' );
     conv.followup( 'actions_intent_WAITING_AGAIN' );
 } );
 
 app.intent( 'waiting_yes', conv => {
-    conv.contexts.delete( 'waiting_followup' );
+    conv.contexts.delete( 'waiting-followup' );
     conv.contexts.delete( 'ready_for_another_room-followup' );
-
-    conv.followup( 'actions_intent_READYFORROOM' );
+    conv.contexts.set('welcome_back-followup', 1);
+    conv.followup( 'actions_intent_CONTINUE' );
 } );
 
 
@@ -149,20 +145,22 @@ app.intent( 'waiting_again', conv => {
     let response = {
         audioMessages: []
     };
-    conv.contexts.delete( 'waiting_followup' );
+    conv.contexts.delete( 'waiting-followup' );
 
     response.audioMessages = [  getMessage( 'waiting_sound_continue' ) ];
     sendResponse( conv, response );
 } );
 
 app.intent( 'waiting_again_no', conv => {
-    conv.contexts.delete( 'waiting_again_followup' );
+    conv.contexts.delete( 'waiting_again-followup' );
     conv.followup( 'actions_intent_WAITING_AGAIN' );
 } );
 
 app.intent( 'waiting_again_yes', conv => {
-    conv.contexts.delete( 'waiting_again_followup' );
-    conv.followup( 'actions_intent_READYFORROOM' );
+    conv.contexts.delete( 'waiting_again-followup' );
+    conv.contexts.set('welcome_back-followup', 1);
+
+    conv.followup( 'actions_intent_CONTINUE' );
 } );
 
 // start welcome back
@@ -177,14 +175,15 @@ app.intent( 'continue_no', conv => {
 } );
 
 app.intent( 'continue_yes', conv => {
-    let roomsleft = getRoomsLeft( conv ) || (  MAXROOMS  );
-    console.log( 'rooms left:', roomsleft );
+
+    conv.contexts.delete( 'waiting-followup' );
+    conv.contexts.delete( 'waiting_again-followup' );
+    conv.contexts.delete( 'welcome_back-followup' );
 
     let response = {
-        audioMessages: [ MESSAGES[ 'rooms_left' ][ roomsleft - 1 ], getMessage( 'end_room_question' ) ]
+        audioMessages: [ getMessage( 'end_room_question' ) ]
     };
     sendResponse( conv, response );
-    conv.contexts.delete( 'welcome_back-followup' );
 
 } );
 
@@ -197,6 +196,10 @@ app.intent( ['are_you_sure_no','continue_yes_notaccusing', 'get_room_no' ], conv
     let response = {
         audioMessages: []
     };
+
+    conv.contexts.delete( 'waiting-followup' );
+    conv.contexts.delete( 'waiting_again-followup' );
+    conv.contexts.delete( 'welcome_back-followup' );
 
     if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
         // teveel geluisterd
@@ -226,10 +229,10 @@ app.intent( 'are_you_sure', conv => {
     conv.contexts.delete( 'ask_for_accusation' );
 
     if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
-        // skip step 'are you sure' because we cant lsiten any more rooms anyway
+        // skip step 'are you sure' because we cant listen any more rooms anyway
         conv.followup( 'actions_intent_FORCEACCUSE' );
     } else {
-        let response = { audioMessages: [ MESSAGES[ 'are_you_sure' ][ getRoomsLeft( conv ) ] ] };
+        let response = { audioMessages: [ MESSAGES[ 'are_you_sure' ][ getRoomsLeft( conv ) ] , getMessage( 'are_you_sure_question' ) ] };
         sendResponse( conv, response );
     }
 
@@ -273,13 +276,29 @@ app.intent( 'say_bye', ( conv ) => {
 } );
 
 app.intent( 'Default Welcome Intent', conv => {
+    // restart is always reset!
     console.log( 'trigger actions_intent_WELCOMEBACK' );
     conv.followup( 'actions_intent_WELCOMEBACK' );
 } );
 
 
 app.intent( 'Default Fallback Intent', conv => {
-    conv.ask( 'sorry, dit begrijp ik niet helemaal.' );
+    let messages = [
+        'sorry, ik begrijp niet helemaal wat je bedoelt, wil je nog wat bedenktijd?',
+        'sorry, dat heb ik niet helemaal begrepen, wil je nog wat bedenktijd?'
+    ];
+    conv.ask( getRandomItem( messages ) )
+
+} );
+
+app.intent( 'default_fallback_yes', conv => {
+    conv.followup( 'actions_intent_WAITING' );
+} );
+
+app.intent( 'default_fallback_no', conv => {
+    conv.contexts.set('welcome_back-followup', 1);
+
+    conv.followup( 'actions_intent_CONTINUE' );
 } );
 
 app.intent( 'repeatRoom', conv => {
@@ -321,7 +340,7 @@ app.intent( ['help_again_no'], conv => {
 } );
 
 app.intent( 'help_no', conv => {
-    conv.contexts.delete( 'help_followup' );
+    conv.contexts.delete( 'help-followup' );
 
     let response = { audioMessages: [ getMessage( 'help_no' ) ] };
     sendResponse( conv, response );
@@ -361,7 +380,8 @@ let MESSAGES = {
     'know_answer_yes': [''],
     'know_answer_no': [ 'C-02-a', 'C-02-b', 'C-02-c' ],
     'know_answer_unclear': [], // MISSING ?
-    'are_you_sure' : [ 'J-01.8_v2','J-01.7_v2','J-01.6_v2','J-01.5_v2','J-01.4_v2','J-01.3_v2','J-01.2_v2','J-01.1_v2' ,'J-01.0' ],
+    'are_you_sure' : [ 'J-01.8','J-01.7','J-01.6','J-01.5','J-01.4','J-01.3','J-01.2','J-01.1' ,'J-01.0' ],
+    'are_you_sure_question' : [ 'J-02' ],
     'are_you_sure_yes': [ 'W-01' ],
     'are_you_sure_no': [''],
     'accuse_fallback': [ '' ],
@@ -568,7 +588,7 @@ const getRandomItem = ( array ) => {
 };
 
 let deleteAllContexts = ( conv, exceptions ) => {
-    let contexts = ['roomlistened', 'ask_for_accusation','getRoom-followup','welcome_back-followup' ,'waiting_followup', 'ready_for_another_room-followup' , 'innocentCharacters', 'follow_henk_yes-followup' , 'intro-followup'  ]
+    let contexts = ['roomlistened', 'ask_for_accusation','getRoom-followup','welcome_back-followup' ,'waiting-followup', 'ready_for_another_room-followup' , 'innocentCharacters', 'follow_henk_yes-followup' , 'intro-followup'  ];
 
     contexts.map( ( context ) => {
         if ( ! context.in( exceptions )  ) {
@@ -645,7 +665,11 @@ let playRoom = ( conv, repeat ) => {
         response.audioMessages.push( MESSAGES[ 'no_room' ] );
     } else if ( room.empty ) {
         setLastPlayed( conv, room.id );
-        conv.ask( 'daar zit niemand, welke kamer wil je horen?' ) // TODO MISSING
+        let messages = [
+            'In die kamer zit niemand, welke andere kamer wil je horen?',
+            'In kamer ' + room.id +  ' verblijven geen gasten, welke andere kamer wil je beluisteren?'
+        ];
+        conv.ask( getRandomItem( messages ) )
     } else if ( getAmountRoomsListened( conv ) !== MAXROOMS && !room.listened ) {
         // ja mag ;
         setRoomListened( conv, room.id );
