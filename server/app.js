@@ -369,14 +369,14 @@ app.intent( 'help_no_insufficient', conv => {
 
 //// Audio files
 let MESSAGES = {
-    'intro': [ 'I-01' ],
+    'intro': [ 'I-01_v3' ],
     'have_notes': [ 'I-02' ],
     'have_notes_no': [ 'I-03' ],
     'have_notes_yes': [ 'I-04' ],
     'have_notes_yes_continued': [ 'I-05' ],
     'follow_henk_yes': [ 'I-07' ],
     'follow_henk_no': [ 'I-06' ],
-    'provide_help_yes': [ 'I-08_v2' ],
+    'provide_help_yes': [ 'I-08' ],
     'provide_help_no': [ 'I-09' ],
     'which_room': [ 'A-01-a', 'A-01-b', 'A-01-c', 'A-01-d' ],
     'which_room_fallback': [ 'FB-A-a', 'FB-A-b', 'FB-A-c', 'FB-A-d', 'FB-A-e' ],
