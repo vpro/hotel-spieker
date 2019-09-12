@@ -46,7 +46,7 @@ app.intent( 'have_notes_yes', ( conv ) => {
 } );
 
 app.intent( 'have_notes_no', ( conv ) => {
-    conv.followup( 'actions_intent_NO_NOTES' );
+    conv.followup( 'hotel_spieker_NO_NOTES' );
 } );
 
 app.intent( 'user_has_no_notes', ( conv ) => {
@@ -90,7 +90,7 @@ app.intent( 'getRoom', conv => {
 
 app.intent( 'get_room_yes', conv => {
     conv.contexts.delete( 'innocentCharacters' );
-    conv.followup( 'actions_intent_AREYOUSURE' );
+    conv.followup( 'hotel_spieker_AREYOUSURE' );
 } );
 
 app.intent( 'ready_for_another_room', conv => {
@@ -106,12 +106,12 @@ app.intent( 'ready_for_another_room', conv => {
 
 app.intent( 'ready_for_another_room_yes', conv => {
     conv.contexts.delete( 'ready_for_another_room-followup' );
-    conv.followup( 'actions_intent_READYFORROOM' );
+    conv.followup( 'hotel_spieker_READYFORROOM' );
 } );
 
 app.intent( 'ready_for_another_room_no', conv => {
     conv.contexts.delete( 'ready_for_another_room-followup' );
-    conv.followup( 'actions_intent_WAITING' );
+    conv.followup( 'hotel_spieker_WAITING' );
 } );
 
 
@@ -130,14 +130,14 @@ app.intent( 'waiting', conv => {
 app.intent( 'waiting_no', conv => {
     conv.contexts.delete( 'waiting-followup' );
     conv.contexts.delete( 'ready_for_another_room-followup' );
-    conv.followup( 'actions_intent_WAITING_AGAIN' );
+    conv.followup( 'hotel_spieker_WAITING_AGAIN' );
 } );
 
 app.intent( 'waiting_yes', conv => {
     conv.contexts.delete( 'waiting-followup' );
     conv.contexts.delete( 'ready_for_another_room-followup' );
     conv.contexts.set('welcome_back-followup', 1);
-    conv.followup( 'actions_intent_CONTINUE' );
+    conv.followup( 'hotel_spieker_CONTINUE' );
 } );
 
 
@@ -153,14 +153,14 @@ app.intent( 'waiting_again', conv => {
 
 app.intent( 'waiting_again_no', conv => {
     conv.contexts.delete( 'waiting_again-followup' );
-    conv.followup( 'actions_intent_WAITING_AGAIN' );
+    conv.followup( 'hotel_spieker_WAITING_AGAIN' );
 } );
 
 app.intent( 'waiting_again_yes', conv => {
     conv.contexts.delete( 'waiting_again-followup' );
     conv.contexts.set('welcome_back-followup', 1);
 
-    conv.followup( 'actions_intent_CONTINUE' );
+    conv.followup( 'hotel_spieker_CONTINUE' );
 } );
 
 // start welcome back
@@ -171,7 +171,7 @@ app.intent( 'welcome_back', conv => {
 
 app.intent( 'continue_no', conv => {
     conv.contexts.delete( 'welcome_back-followup' );
-    conv.followup( 'actions_intent_STARTGAME' );
+    conv.followup( 'hotel_spieker_STARTGAME' );
 } );
 
 app.intent( 'continue_yes', conv => {
@@ -188,7 +188,7 @@ app.intent( 'continue_yes', conv => {
 } );
 
 app.intent( 'continue_yes_accusing', conv => {
-    conv.followup( 'actions_intent_AREYOUSURE' );
+    conv.followup( 'hotel_spieker_AREYOUSURE' );
 } );
 
 app.intent( ['are_you_sure_no','continue_yes_notaccusing', 'get_room_no' ], conv => {
@@ -206,7 +206,7 @@ app.intent( ['are_you_sure_no','continue_yes_notaccusing', 'get_room_no' ], conv
         response.audioMessages = [ ( getMessage( 'max_rooms_reached' ) ), getMessage( 'end_room_question' ) ];
         sendResponse( conv, response );
     } else {
-        conv.followup( 'actions_intent_READYFORANOTHER' );
+        conv.followup( 'hotel_spieker_READYFORANOTHER' );
     }
 
 } );
@@ -219,7 +219,7 @@ app.intent( [ 'have_notes_fallback', 'follow_henk_fallback',  'provide_help_fall
 
 // accuse
 app.intent( 'accuse', conv => {
-    conv.followup( 'actions_intent_AREYOUSURE' );
+    conv.followup( 'hotel_spieker_AREYOUSURE' );
 });
 
 app.intent( 'are_you_sure', conv => {
@@ -230,7 +230,7 @@ app.intent( 'are_you_sure', conv => {
 
     if ( getAmountRoomsListened( conv ) === MAXROOMS || getAmountRoomsListened( conv ) > MAXROOMS ) {
         // skip step 'are you sure' because we cant listen any more rooms anyway
-        conv.followup( 'actions_intent_FORCEACCUSE' );
+        conv.followup( 'hotel_spieker_FORCEACCUSE' );
     } else {
         let response = { audioMessages: [ MESSAGES[ 'are_you_sure' ][ getRoomsLeft( conv ) ] , getMessage( 'are_you_sure_question' ) ] };
         sendResponse( conv, response );
@@ -277,8 +277,7 @@ app.intent( 'say_bye', ( conv ) => {
 
 app.intent( 'Default Welcome Intent', conv => {
     // restart is always reset!
-    console.log( 'trigger actions_intent_WELCOMEBACK' );
-    conv.followup( 'actions_intent_WELCOMEBACK' );
+    conv.followup( 'hotel_spieker_WELCOMEBACK' );
 } );
 
 
@@ -292,13 +291,13 @@ app.intent( 'Default Fallback Intent', conv => {
 } );
 
 app.intent( 'default_fallback_yes', conv => {
-    conv.followup( 'actions_intent_WAITING' );
+    conv.followup( 'hotel_spieker_WAITING' );
 } );
 
 app.intent( 'default_fallback_no', conv => {
     conv.contexts.set('welcome_back-followup', 1);
 
-    conv.followup( 'actions_intent_CONTINUE' );
+    conv.followup( 'hotel_spieker_CONTINUE' );
 } );
 
 app.intent( 'repeatRoom', conv => {
@@ -343,11 +342,11 @@ app.intent( ['help_yes_insufficient'], conv => {
 } );
 
 app.intent( ['help_again_yes'], conv => {
-    conv.followup( 'actions_intent_HELPNEEDED' );
+    conv.followup( 'hotel_spieker_HELPNEEDED' );
 } );
 
 app.intent( ['help_again_no'], conv => {
-    conv.followup( 'actions_intent_READYFORROOM' );
+    conv.followup( 'hotel_spieker_READYFORROOM' );
 } );
 
 app.intent( 'help_no', conv => {
@@ -358,7 +357,7 @@ app.intent( 'help_no', conv => {
 } );
 
 app.intent( ['help_no_sufficient','help_yes_sufficient'], conv => {
-    conv.followup( 'actions_intent_READYFORROOM' );
+    conv.followup( 'hotel_spieker_READYFORROOM' );
 } );
 
 app.intent( 'help_no_insufficient', conv => {

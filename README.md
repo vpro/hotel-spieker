@@ -27,7 +27,7 @@ For instance, if the users triggers the system by saying "A", you can define an 
 To test the game with local code:
 - npm install
 - use ngrok to start url-forwarding: `ngrok http 8080`
-- start server using the resulting ngrok url, for instance:`URL=https://d90a3f22.ngrok.io npm run start` (ALWAYS USE HTTPS)
+- start server using the resulting ngrok url, for instance:`URL=https://c2025dcd.ngrok.io npm run start` (ALWAYS USE HTTPS)
 - configure fullfilment in dialogflow (set fullfillement url to `https://d90a3f22.ngrok.io/app`)
 
 When using 'test in Google assistant': 
