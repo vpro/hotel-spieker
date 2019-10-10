@@ -2,7 +2,7 @@ const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 
 // Import the appropriate service and chosen wrappers
-const { dialogflow } = require( 'actions-on-google' );
+const { dialogflow, SimpleResponse } = require( 'actions-on-google' );
 
 // Create an app instance
 const app = dialogflow( {
@@ -24,6 +24,12 @@ app.middleware( conv => {
     // will run before running the intent handler
     console.log( '////////// intent received: ' + conv.intent + ' ////////////' );
     console.log( 'contexts:', conv.contexts );
+
+    // const screenAvailable = conv.available.surfaces.capabilities.has('actions.capability.SCREEN_OUTPUT');
+    // if ( screenAvailable ) {
+    //     conv.ask( 'Hotel Spieker is een audio-ervaring speciaal ontwikkelt voor de smart speaker' );
+    // }
+
 } );
 
 
@@ -251,9 +257,9 @@ app.intent( [ 'answer_given', 'answer_given_catchall' ], conv => {
     if ( answer === 'emma' ) {
         response = { end: true, audioMessages: [ getMessage( 'accuse_correct' ), getMessage( 'credits' ) ] };
     } else if ( answer in innocentCharacters ) {
-        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters[ answer ], MESSAGES[ 'accuse_wrong' ][ 1 ] ] };
+        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters[ answer ], MESSAGES[ 'accuse_wrong' ][ 1 ], getMessage( 'credits' ) ] };
     } else if ( answer in innocentCharacters2 ) {
-        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters2[ answer ] ] };
+        response = { end: true, audioMessages: [ MESSAGES[ 'accuse_wrong' ][ 0 ],  innocentCharacters2[ answer ], getMessage( 'credits' ) ] };
 }    else {
         response = { end: true, audioMessages: [ getMessage( 'accuse__name_fallback' ) ] };
         console.log( 'error' );
@@ -691,7 +697,7 @@ let playRoom = ( conv, repeat ) => {
 };
 
 let sendResponse = ( conv, response ) => {
-    let responseMessage = generateAudioResponse( response );
+    let responseMessage = generateAudioResponse( response, conv );
     if ( response.end ) {
         conv.close( responseMessage );
     } else {
@@ -700,7 +706,7 @@ let sendResponse = ( conv, response ) => {
 
 };
 
-let generateAudioResponse = ( input ) => {
+let generateAudioResponse = ( input, conv ) => {
 
     let messages = input.audioMessages.map( ( item, i ) => {
         if ( item.isText ) {
@@ -709,7 +715,14 @@ let generateAudioResponse = ( input ) => {
             return `<audio src="${audioRoot}${item}.${audioFormat}"/>`
         }
     } );
+    // if ( conv.screen ) {
+    //     return new SimpleResponse({
+    //         speech: `<speak>${messages.join( "" )}</speak>`,
+    //         text: `Hotel Spieker is een audio-ervaring speciaal ontwikkelt voor de smart speaker.`
+    //     });
+    // } else {
     return `<speak>${messages.join( "" )}</speak>`;
+    // }
 };
 
 expressApp.post( '/app', app );
