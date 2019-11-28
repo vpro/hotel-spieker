@@ -27,7 +27,7 @@ app.middleware( conv => {
 
     // const screenAvailable = conv.available.surfaces.capabilities.has('actions.capability.SCREEN_OUTPUT');
     // if ( screenAvailable ) {
-    //     conv.ask( 'Hotel Spieker is een audio-ervaring speciaal ontwikkelt voor de smart speaker' );
+    //     conv.ask( 'Hotel Spieker wordt niet ondersteund op mobiel, probeer het met een Google Home.' );
     // }
 
 } );
@@ -441,14 +441,14 @@ let innocentCharacters = {
     'puk': [ 'E-12' ],
     'bob': [ 'E-13' ],
     'henk': [ 'E-14' ],
-};
-
-
-let innocentCharacters2 = {
     'pien': [ 'E-15' ],
     'evert': [ 'E-16' ],
     'steve': [ 'E-17' ],
     'evaline': [ 'E-17' ],
+};
+
+
+let innocentCharacters2 = {
     'thierry': [ 'E-18' ]
 };
 
@@ -715,14 +715,14 @@ let generateAudioResponse = ( input, conv ) => {
             return `<audio src="${audioRoot}${item}.${audioFormat}"/>`
         }
     } );
-    // if ( conv.screen ) {
-    //     return new SimpleResponse({
-    //         speech: `<speak>${messages.join( "" )}</speak>`,
-    //         text: `Hotel Spieker is een audio-ervaring speciaal ontwikkelt voor de smart speaker.`
-    //     });
-    // } else {
-    return `<speak>${messages.join( "" )}</speak>`;
-    // }
+    if ( conv.screen ) {
+        return new SimpleResponse({
+            speech: `<speak>${messages.join( "" )}</speak>`,
+            text: `Hotel Spieker is een audiogame en is niet geoptimaliseerd voor de smartphone. Gebruik een Google Home voor de beste ervaring.`
+        });
+    } else {
+        return `<speak>${messages.join( "" )}</speak>`;
+    }
 };
 
 expressApp.post( '/app', app );
