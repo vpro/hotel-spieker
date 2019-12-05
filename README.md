@@ -13,13 +13,13 @@ The main game flow is also described in the flowchart in the root of this projec
 For now, placeholder audio is used...
 
 Basic functionality:
-- Intents are created in dialogflow (intents are utterances that the agent should reply to), with corresponding trainings-sentences.
-- Each intent is configured to use a 'webhook fullfilment', meaning the code in this project should handle the intent, instead of dialogflow.
+- Intents are created in Google Dialogflow (intents are utterances that the agent should reply to), with corresponding trainings-sentences.
+- Each intent is configured to use a 'webhook fullfilment', meaning the code in this project should handle the intent, instead of whatever is determined in dialogflow.
 - The code determines which audio to play, and to which point in the game we should jump (if needed).
-- We can use 'actions' to trigger intents by code, instead of by user-input. See the default  welcome intentfor example. You define the name of the action in the intent you want to trigger
+- We can use 'actions' to trigger intents by code, instead of by user-input. See the default welcome intent for example. You define the name of the action in the intent you want to trigger
 - To jump between different parts of the game, you can use contexts: 
 For instance, if the users triggers the system by saying "A", you can define an OUTPUT-context in the intenthandler for "intent A". That means that de next utterance by the user will only trigger intents that have INPUT-context with the same name as the previously defined OUTPUT-context 
-- Some yes/no questions are defined as follow-up intents within dialogflow, creating a tree of intents. This automatically gives these intents input- and output-contexts. These context make sure that the users 'yes/no' respons triggers that specific intent only. Note: when multiple yes/no intents follow eachother, we sometimes have to force clear the previous intent.
+- Some yes/no questions are defined as follow-up intents within dialogflow, creating a tree of intents. This automatically gives these intents input- and output-contexts. These context make sure that the users 'yes/no' response triggers that specific intent only. Note: when multiple yes/no intents follow eachother, we sometimes have to force clear the previous intent.
 - Other intents can be global, so they respond to their training-sentences in all situations, even if you're in a specific tree. (for instance, the getRoom intent always works, so you can always say 'speel kamer X' )
 
 
@@ -39,19 +39,4 @@ When deploying to binnenkort-op.vpro.nl:
 ------------
 
 Status:
-
-Done:
-- Intro flow
-- Returning visitor flow
-- Game logic (listening rooms, keeping tracks of rooms listened and how may rooms are left to listen)
-- Answer flow for correct/incorrect answer
-
-
-Todo / unfinished:
-- Roomlisten flow (see https://docs.google.com/document/d/1IGKbORkLrWJ7zimeghas7CYjfIx8ZJIH4WewbNV-BkI/edit?ts=5c9b3b3b )
-- help
-
-
-------------
-Notes:
-- audio moet mp3 zijn, mag kleiner, moet geladen worden voordat afgepseeld wordt
+De app is 'ready' for submission in the Google store, although we've submitted it twice now and it has been rejected twice, but on which grounds is a bit unclear. See https://jira.vpro.nl/browse/CCA-196 voor most recent communication.
